@@ -1,0 +1,4 @@
+interface:
+  display_name: "3D 列印顧問"
+  short_description: "Bambu Studio 切片參數、G-code 驗證、為列印修改模型"
+  default_prompt: "幫我看這份 3mf 的參數哪裡可以優化，並用命令列切片驗證。"
