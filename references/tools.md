@@ -28,3 +28,9 @@
 - 分色資訊在 `3D/Objects/*.model` 的 `paint_color` 屬性。
 - `.gcode.3mf`（匯出切片檔）不一定有可編輯的模型；要改模型請使用者用「儲存專案」。
 - 物件在盤上的位置：`Metadata/plate_1.json` 的 `bbox_objects`。
+- **高度範圍修改器（只改某幾層的設定）**：寫進 `Metadata/layer_config_ranges.xml`（實測 02.08 CLI 有效）。`<object id>` 要用**物件在 `3D/3dmodel.model` 裡的順序（從 1 開始）**，不是 resource id（用 id 6 沒效果，用順序 3 才有效）。`min_z`／`max_z` 是熱床上的列印高度。驗證方法：比較該層的 Bridge E/mm。
+  ```xml
+  <objects><object id="3"><range min_z="16.1" max_z="16.25">
+    <option opt_key="extruder">0</option><option opt_key="layer_height">0.16</option>
+    <option opt_key="bridge_flow">1</option></range></object></objects>
+  ```
