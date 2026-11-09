@@ -13,6 +13,13 @@
 - `; total estimated time`：總時間。
 - `; Z_HEIGHT:` 每層高度；`; FEATURE:` 特徵類型；換料是 `M620 S{n}A` … `M621`。
 - `result.json` → `sliced_plates[0].feature_type_times`（秒）、`filament_change_times`。
+- 每個物件的走線在 `; start printing object, unique label id: N` 和 `; stop printing object` 之間。
+- 量尺寸：外牆走線端點到圓心的距離，再加減半個線寬。開了圓弧擬合時圓是 G2/G3，要一起算；內部填充是長直線，只有端點，不能拿來量。
+- 暫停：`M400 U1`。要確認暫停在哪層，往前找最近的 `; Z_HEIGHT`。
+- 逐件列印間距不夠時，CLI 會直接失敗（exit 193），log 有 `got error when validate: … is too close to others`。
+
+- 換料碼要比對 `T0`～`T9`。`T1000` 這類是換料巨集，不是耗材編號。
+- **`enable_arc_fitting` 開著時有大量 G2/G3**。只解析 G1 會漏掉小圈，曾因此把「有一小圈」誤判成「沒有線」。
 
 ## scripts/
 | 腳本 | 用途 |
@@ -21,13 +28,22 @@
 | `bambu_line_angles.py plate_1.gcode [--tool]` | 逐層列出各特徵（或各耗材）的主要走線角度 |
 | `bambu_ironing_angle.py plate_1.gcode` | 熨燙走線的實際角度 |
 | `bambu_region_coverage.py plate_1.gcode region.json` | 每層在指定區域（例如刻字範圍）的出料長度，用來確認刻字實際深度；座標要換成熱床座標 |
+| `bambu_3mf_diff.py a.3mf b.3mf [--all]` | 比對兩個專案的參數，先列出各自套的設定名稱 |
+| `bambu_3mf_objects.py list/swap/add/drop/move …` | 換網格（位置不動）、加物件、刪物件、移位置。說明在檔頭 |
+| `bambu_gcode_objects.py plate_1.gcode [--circle X,Y --z Z --min/--max]` | 每個物件的實際範圍和高度；量孔或圓柱印出來的半徑（含圓孔校正） |
+| `bambu_top_layer_plot.py out.png a.gcode:標籤 b.gcode:標籤` | 多個 G-code 的最上層走線上下對照（含弧線），看字洞、細節；用眼睛比，不要只靠自動計數 |
+| `bambu_3mf_scale_xy.py in.3mf out.3mf 1.08` | 只放大 XY，保留設定、部件和厚度 |
 
 ## 3mf 結構
 - 3mf 是 zip。參數在 `Metadata/project_settings.config`（JSON），改過的 key 要加進 `different_settings_to_system[0]`（分號分隔；有些檔案沒有這個欄位，要能容忍）。
 - 物件層級的覆寫設定在 `Metadata/model_settings.config` 的 `<object>` 底下（`<metadata key="..." value="..."/>`）。
 - 分色資訊在 `3D/Objects/*.model` 的 `paint_color` 屬性。
 - `.gcode.3mf`（匯出切片檔）不一定有可編輯的模型；要改模型請使用者用「儲存專案」。
-- 物件在盤上的位置：`Metadata/plate_1.json` 的 `bbox_objects`。
+- **多部件物件（分色薄片）**：`3D/Objects/object_N.model` 放多個 `<object>` 網格；`3D/3dmodel.model` 的 `<components>` 各列一個；`model_settings.config` 用 `<part>` 加 `<metadata key="extruder" value="n"/>` 指定耗材。頂點座標以 `source_offset_x/y/z` 為原點。
+- 物件在盤上的位置：`Metadata/plate_1.json` 的 `bbox_objects`；正確的擺放（含旋轉）是 `3D/3dmodel.model` 的 `<item transform>`（3×3 旋轉＋XYZ 位移）。Z 軸是 −1 代表在 Bambu 裡被翻過面，**不要只看 STL 檔名判斷列印方向**。
+- 網格在 `3D/Objects/*.model`，以自己的中心點置中。同一個 STL 複製多份時，多個物件會共用同一份網格。
+- **`Objects/*.model` 裡的 object id 在整個 3mf 內要唯一**：加物件時如果用了跟別的檔案一樣的 id，Bambu 會讀到別的網格（實測：加入的圓蓋變成被切半的後殼）。加物件要同時改 `3dmodel.model`（resources＋build item）、`model_settings.config`（object、plate 的 model_instance、assemble）、`_rels`。用 `scripts/bambu_3mf_objects.py`。
+- 加完物件一定要切片，用 `bambu_gcode_objects.py` 確認每個物件的高度和位置。
 - **高度範圍修改器（只改某幾層的設定）**：寫進 `Metadata/layer_config_ranges.xml`（實測 02.08 CLI 有效）。`<object id>` 要用**物件在 `3D/3dmodel.model` 裡的順序（從 1 開始）**，不是 resource id（用 id 6 沒效果，用順序 3 才有效）。`min_z`／`max_z` 是熱床上的列印高度。驗證方法：比較該層的 Bridge E/mm。
   ```xml
   <objects><object id="3"><range min_z="16.1" max_z="16.25">
