@@ -9,7 +9,7 @@ description: FDM 3D 列印顧問，以 Bambu Studio／Bambu Lab 印表機為主�
 
 ## 開工前
 
-- 確認**機型、噴嘴、線材（品牌＋系列）、列印板**，以及使用者最在意的面（外觀、尺寸、好拆、時間）。
+- 確認**機型、噴嘴、線材（品牌＋系列）、列印板**（3mf 的 `curr_bed_type` 要跟實際板子一致，見 `references/bambu-slicing.md`「熱床類型」），以及使用者最在意的面（外觀、尺寸、好拆、時間）。
 - 如果有 `personal/` 資料夾，先讀 `personal/profile.md`：裡面有使用者的機器、校正值、偏好和專案位置。沒有這個資料夾就照一般預設處理。
 - 依任務讀對應的 reference，不用全部讀：
 
