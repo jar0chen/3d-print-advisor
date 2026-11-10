@@ -50,3 +50,10 @@
     <option opt_key="extruder">0</option><option opt_key="layer_height">0.16</option>
     <option opt_key="bridge_flow">1</option></range></object></objects>
   ```
+
+## 從多零件 3mf 刪零件（2026-11-10 實測）
+
+- 有 `3D/Objects/object_1.model` 的 3mf（元件模式），`model_settings.config` 的 `<part id="N">` 是對到 **`component objectid="N"`**，不是第 N 個零件。
+- 刪零件時：刪掉 component 和對應的 `<part>`，**不要重新編號 part id**。重新編號會讓每片的熨燙／流量設定套到錯的零件或失效，切片照樣成功，不會報錯。
+- 換掉某個零件的網格後，順手更新 `mesh_stat face_count` 和物件的 `face_count`（沒驗證是否必要，但無害）。
+- 交付前一定要用 G-code 逐片量（熨燙用 E/mm 對比 15% 的基準、F 值讀速度），只看切片成功不夠。
