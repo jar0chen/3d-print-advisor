@@ -33,6 +33,7 @@
 | `bambu_gcode_objects.py plate_1.gcode [--circle X,Y --z Z --min/--max]` | 每個物件的實際範圍和高度；量孔或圓柱印出來的半徑（含圓孔校正） |
 | `bambu_top_layer_plot.py out.png a.gcode:標籤 b.gcode:標籤` | 多個 G-code 的最上層走線上下對照（含弧線），看字洞、細節；用眼睛比，不要只靠自動計數 |
 | `bambu_3mf_scale_xy.py in.3mf out.3mf 1.08` | 只放大 XY，保留設定、部件和厚度 |
+| `bambu_footprint_plot.py out.png --box x0,x1,y0,y1 [--zmin Z] [--mirror] a.gcode:標籤 …` | 頂層走線畫成實心足跡（依 E 值算線寬），模擬凸字／印章面印出來會不會斷、字洞會不會被填 |
 | `bambu_feature_grid.py plate_1.gcode Ironing "X:欄,…" "Y:列,…" [--ref E/mm:值]` | 測試片逐格量某特徵的 E/mm 和速度，對照刻的數字；設定錯位時切片照樣成功，只有這樣才抓得到 |
 
 ## 3mf 結構
@@ -63,3 +64,4 @@
 - 裁切、搬移、切掉底部：用 `manifold3d`（`Manifold ^ box` 交集、`.translate`、`+` 聯集），在元件的局部座標裡算，寫回 `3D/Objects/object_1.model` 的同一個 object id。
 - 把物件往下沉（item 的 Z 平移變小）切片也能少印底部，但 Bambu 介面開檔可能把它拉回板上；**直接把網格底部切掉比較可靠**。
 - 只縮 XY：改 build item 的矩陣。注意有旋轉的 item（STEP 匯入常見 Y 朝上），要縮的是對應到熱床 X、Y 的那兩個係數，高度係數不動。
+- **`bambu_3mf_objects.py swap` 沒加 `--file` 會換掉 3mf 裡所有物件檔的網格**（盤上多個不同模型時會全部變成同一個）。只換一個模型時一定要加 `--file object_N.model`；同一個 object 檔被兩個物件共用時，兩個會一起換（正好適合「盤上兩顆同款」）。
